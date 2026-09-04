@@ -1,6 +1,6 @@
 [package]
 name = "cal_nongli"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "中国农历命令行工具：date 风格查看某日农历档案，cal 风格叠加显示公历/农历、干支、节气与传统节日；内置 nongli 核心库"
 license = "MIT"
