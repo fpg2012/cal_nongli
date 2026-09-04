@@ -32,7 +32,10 @@ fn default_output_has_term_line() {
 
 #[test]
 fn format_solar() {
-    assert_eq!(run(&["-f", "%Y年%m月%d日 %A", "-d", "2026-09-04"]), "2026年9月4日 星期五\n");
+    // %A 只给星期几单字，前缀自理
+    assert_eq!(run(&["-f", "%Y年%m月%d日 星期%A", "-d", "2026-09-04"]), "2026年9月4日 星期五\n");
+    assert_eq!(run(&["-f", "周%A", "-d", "2026-09-04"]), "周五\n");
+    assert_eq!(run(&["-f", "%A", "-d", "2026-09-04"]), "五\n");
 }
 
 #[test]
