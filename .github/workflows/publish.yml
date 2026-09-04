@@ -1,0 +1,35 @@
+name: publish-to-crates-io
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Verify version matches tag
+        # crates.io 不允许重复发布同一版本；强制 tag(vX.Y) 与 Cargo.toml 的
+        # version 一致，避免 tag 与版本号不一致导致误发或失败。
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml)"
+          if [ "$tag" != "$ver" ]; then
+            echo "tag '${GITHUB_REF_NAME}' != Cargo.toml version '${ver}'" >&2
+            exit 1
+          fi
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish
