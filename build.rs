@@ -17,7 +17,7 @@ fn run_git(args: &[&str]) -> Option<String> {
 }
 
 fn main() {
-    println!("cargo:rerun-if-changed=build.rs");
+    // 不声明 rerun-if-changed：让 build.rs 每次构建都重跑，以便版本号实时反映 git 状态。
     // 版本号：优先 git 标签；无标签则用 commit 短 hash(可带 -dirty)。不在 git 里则退回 Cargo 版本号。
     let ver = run_git(&["describe", "--tags", "--always", "--dirty"])
         .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
