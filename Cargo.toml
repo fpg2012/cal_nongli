@@ -2,6 +2,12 @@
 name = "cal_nongli"
 version = "0.1.0"
 edition = "2021"
+description = "中国农历命令行工具：date 风格查看某日农历档案，cal 风格叠加显示公历/农历、干支、节气与传统节日；内置 nongli 核心库"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/fpg2012/cal_nongli"
+keywords = ["lunar", "calendar", "农历", "干支", "ganzhi", "cli"]
+categories = ["command-line-utilities", "date-and-time"]
 
 [lib]
 name = "nongli"
