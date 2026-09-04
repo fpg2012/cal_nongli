@@ -6,7 +6,7 @@ description = "中国农历命令行工具：date 风格查看某日农历档案
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/fpg2012/cal_nongli"
-keywords = ["lunar", "calendar", "date", "农历", "cli"]
+keywords = ["lunar", "calendar", "date", "chinese", "cli"]
 categories = ["command-line-utilities", "date-and-time"]
 
 [lib]
