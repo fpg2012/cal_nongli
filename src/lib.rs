@@ -359,3 +359,147 @@ pub fn festival_on(y: i32, m: u32, d: u32) -> Option<&'static str> {
     }
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ---------- 公历 -> 农历 ----------
+    #[test]
+    fn solar_to_lunar_known() {
+        let l = to_lunar(2026, 9, 4);
+        assert_eq!((l.year, l.month, l.day), (2026, 7, 23));
+        assert!(!l.is_leap);
+
+        let l = to_lunar(2026, 1, 15); // 落在农历 2025(乙巳) 冬月
+        assert_eq!((l.year, l.month, l.day), (2025, 11, 27));
+
+        let l = to_lunar(2024, 2, 10);
+        assert_eq!((l.year, l.month, l.day), (2024, 1, 1));
+
+        let l = to_lunar(2000, 2, 5);
+        assert_eq!((l.year, l.month, l.day), (2000, 1, 1));
+
+        let l = to_lunar(1900, 1, 31); // 表起点 = 农历1900正月初一
+        assert_eq!((l.year, l.month, l.day), (1900, 1, 1));
+    }
+
+    #[test]
+    fn leap_month_cases() {
+        // 闰月定位
+        let l = to_lunar(2023, 3, 22);
+        assert_eq!((l.year, l.month, l.day), (2023, 2, 1));
+        assert!(l.is_leap);
+
+        let l = to_lunar(2020, 5, 23);
+        assert_eq!((l.year, l.month, l.day), (2020, 4, 1));
+        assert!(l.is_leap);
+
+        let l = to_lunar(2025, 7, 25);
+        assert_eq!((l.year, l.month, l.day), (2025, 6, 1));
+        assert!(l.is_leap);
+
+        // 闰月号
+        assert_eq!(leap_month(2025), 6);
+        assert_eq!(leap_month(2023), 2);
+        assert_eq!(leap_month(2020), 4);
+        assert_eq!(leap_month(2026), 0);
+    }
+
+    #[test]
+    fn lunar_month_slots_order() {
+        // 2025(闰六月): 1..6, 闰6, 7..12 => 13 个槽
+        let slots = lunar_year_slots(2025);
+        assert_eq!(slots.len(), 13);
+        assert_eq!(slots[6], (6, true, leap_days(2025)));
+        // 无闰年的 2026 = 12 槽
+        assert_eq!(lunar_year_slots(2026).len(), 12);
+    }
+
+    // ---------- serial 往返 ----------
+    #[test]
+    fn serial_roundtrip() {
+        for (y, m, d) in [
+            (1900, 2, 1), (1950, 6, 15), (2000, 2, 29), (2026, 9, 4), (2100, 1, 1),
+        ] {
+            assert_eq!(from_serial(serial(y, m, d)), (y, m, d));
+        }
+    }
+
+    #[test]
+    fn weekday_known() {
+        // 1900-01-01 为星期一(索引0)；2026-09-04 为星期五(索引4)
+        assert_eq!(weekday_index(1900, 1, 1), 0);
+        assert_eq!(weekday_index(2026, 9, 4), 4);
+        assert_eq!(weekday_index(2024, 2, 10), 5); // 星期六
+    }
+
+    // ---------- 干支 ----------
+    fn gzname(g: usize, z: usize) -> String {
+        format!("{}{}", GAN[g], ZHI[z])
+    }
+
+    #[test]
+    fn ganzhi_year() {
+        assert_eq!(gzname(ganzhi_of_year(2026).0, ganzhi_of_year(2026).1), "丙午");
+        assert_eq!(gzname(ganzhi_of_year(2025).0, ganzhi_of_year(2025).1), "乙巳");
+        assert_eq!(gzname(ganzhi_of_year(2024).0, ganzhi_of_year(2024).1), "甲辰");
+        assert_eq!(gzname(ganzhi_of_year(2000).0, ganzhi_of_year(2000).1), "庚辰");
+    }
+
+    #[test]
+    fn ganzhi_month() {
+        // 五虎遁：丙年(2026)正月=庚寅，第7月=丙申
+        let (g, z) = ganzhi_of_month(2026, 1);
+        assert_eq!(gzname(g, z), "庚寅");
+        let (g, z) = ganzhi_of_month(2026, 7);
+        assert_eq!(gzname(g, z), "丙申");
+        // 乙年(2025) 冬月(11月)=戊子
+        let (g, z) = ganzhi_of_month(2025, 11);
+        assert_eq!(gzname(g, z), "戊子");
+    }
+
+    #[test]
+    fn ganzhi_day() {
+        let (g, z) = ganzhi_of_day(serial(2026, 9, 4));
+        assert_eq!(gzname(g, z), "辛巳");
+        let (g, z) = ganzhi_of_day(serial(2026, 1, 15));
+        assert_eq!(gzname(g, z), "己丑");
+        let (g, z) = ganzhi_of_day(serial(2020, 5, 23));
+        assert_eq!(gzname(g, z), "丙寅");
+    }
+
+    // ---------- 节气 ----------
+    #[test]
+    fn solar_terms_known() {
+        // 小寒/立春/白露/秋分/冬至 (2026)
+        assert_eq!(term_date(2026, 0), Some((1, 5)));
+        assert_eq!(term_date(2026, 2), Some((2, 4)));
+        assert_eq!(term_date(2026, 16), Some((9, 7)));
+        assert_eq!(term_date(2026, 17), Some((9, 23)));
+        assert_eq!(term_date(2026, 23), Some((12, 22)));
+        // 权威: 2020 小暑 = 7/6 (部分旧版 lunar-date 误为 7/7)
+        assert_eq!(term_date(2020, 12), Some((7, 6)));
+        assert_eq!(jieqi_on(2026, 4, 5), Some("清明"));
+    }
+
+    // ---------- 节日 ----------
+    #[test]
+    fn festivals_known() {
+        // 春节/除夕
+        assert_eq!(festival_on(2024, 2, 10), Some("春节"));
+        assert_eq!(festival_on(2026, 2, 17), Some("春节"));
+        assert_eq!(festival_on(2026, 2, 16), Some("除夕"));
+        // 2026 元宵/端午/七夕/中元/中秋/重阳
+        assert_eq!(festival_on(2026, 3, 3), Some("元宵"));
+        assert_eq!(festival_on(2026, 6, 19), Some("端午"));
+        assert_eq!(festival_on(2026, 8, 19), Some("七夕"));
+        assert_eq!(festival_on(2026, 8, 27), Some("中元"));
+        assert_eq!(festival_on(2026, 9, 25), Some("中秋"));
+        assert_eq!(festival_on(2026, 10, 18), Some("重阳"));
+        // 端午公历锚点(法定假日)
+        assert_eq!(festival_on(2024, 6, 10), Some("端午"));
+        // 普通日无节日
+        assert_eq!(festival_on(2026, 9, 4), None);
+    }
+}
