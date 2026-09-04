@@ -1,0 +1,22 @@
+[package]
+name = "cal_nongli"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "nongli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "date_nongli"
+path = "src/bin/date_nongli.rs"
+
+[[bin]]
+name = "cal_nongli"
+path = "src/bin/cal_nongli.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+
+[profile.release]
+strip = true
